@@ -1,0 +1,114 @@
+# GroceryMate Setup Script for Windows
+# Run this script in PowerShell as Administrator
+
+Write-Host "🥗 GroceryMate Setup Script" -ForegroundColor Green
+Write-Host "================================" -ForegroundColor Green
+Write-Host ""
+
+# Check if Docker is running
+Write-Host "Checking Docker Desktop..." -ForegroundColor Yellow
+$dockerRunning = docker ps 2>&1
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "❌ Docker Desktop is not running!" -ForegroundColor Red
+    Write-Host "Please start Docker Desktop and run this script again." -ForegroundColor Red
+    exit 1
+}
+Write-Host "✅ Docker Desktop is running" -ForegroundColor Green
+Write-Host ""
+
+# Check Python installation
+Write-Host "Checking Python installation..." -ForegroundColor Yellow
+$pythonVersion = python --version 2>&1
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "❌ Python is not installed!" -ForegroundColor Red
+    Write-Host "Please install Python 3.10+ from https://www.python.org/" -ForegroundColor Red
+    exit 1
+}
+Write-Host "✅ Found: $pythonVersion" -ForegroundColor Green
+Write-Host ""
+
+# Check Node.js installation
+Write-Host "Checking Node.js installation..." -ForegroundColor Yellow
+$nodeVersion = node --version 2>&1
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "❌ Node.js is not installed!" -ForegroundColor Red
+    Write-Host "Please install Node.js from https://nodejs.org/" -ForegroundColor Red
+    exit 1
+}
+Write-Host "✅ Found Node.js: $nodeVersion" -ForegroundColor Green
+Write-Host ""
+
+# Start PostgreSQL container
+Write-Host "Starting PostgreSQL container..." -ForegroundColor Yellow
+docker-compose up -d
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "✅ PostgreSQL container started successfully" -ForegroundColor Green
+} else {
+    Write-Host "❌ Failed to start PostgreSQL container" -ForegroundColor Red
+    exit 1
+}
+Write-Host ""
+
+# Setup Backend
+Write-Host "Setting up Backend..." -ForegroundColor Yellow
+Set-Location backend
+
+# Create virtual environment
+if (-not (Test-Path "venv")) {
+    Write-Host "Creating Python virtual environment..." -ForegroundColor Cyan
+    python -m venv venv
+    Write-Host "✅ Virtual environment created" -ForegroundColor Green
+} else {
+    Write-Host "✅ Virtual environment already exists" -ForegroundColor Green
+}
+
+# Activate virtual environment and install dependencies
+Write-Host "Installing Python dependencies..." -ForegroundColor Cyan
+.\venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "✅ Backend dependencies installed" -ForegroundColor Green
+} else {
+    Write-Host "❌ Failed to install backend dependencies" -ForegroundColor Red
+    exit 1
+}
+
+Set-Location ..
+Write-Host ""
+
+# Setup Frontend
+Write-Host "Setting up Frontend..." -ForegroundColor Yellow
+Set-Location frontend
+
+Write-Host "Installing Node.js dependencies..." -ForegroundColor Cyan
+npm install
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "✅ Frontend dependencies installed" -ForegroundColor Green
+} else {
+    Write-Host "❌ Failed to install frontend dependencies" -ForegroundColor Red
+    exit 1
+}
+
+Set-Location ..
+Write-Host ""
+
+# Summary
+Write-Host "================================" -ForegroundColor Green
+Write-Host "✅ Setup Complete!" -ForegroundColor Green
+Write-Host "================================" -ForegroundColor Green
+Write-Host ""
+Write-Host "Next steps:" -ForegroundColor Yellow
+Write-Host "1. Open TWO terminal windows" -ForegroundColor White
+Write-Host ""
+Write-Host "Terminal 1 - Backend:" -ForegroundColor Cyan
+Write-Host "   cd backend" -ForegroundColor White
+Write-Host "   .\venv\Scripts\Activate.ps1" -ForegroundColor White
+Write-Host "   uvicorn app.main:app --reload" -ForegroundColor White
+Write-Host ""
+Write-Host "Terminal 2 - Frontend:" -ForegroundColor Cyan
+Write-Host "   cd frontend" -ForegroundColor White
+Write-Host "   npm run dev" -ForegroundColor White
+Write-Host ""
+Write-Host "Then open: http://localhost:5173" -ForegroundColor Green
+Write-Host "API Docs: http://localhost:8000/docs" -ForegroundColor Green
+Write-Host ""
